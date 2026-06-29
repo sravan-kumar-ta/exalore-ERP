@@ -1,10 +1,5 @@
 import { Search, Calendar } from "lucide-react";
 
-import {
-   QUOTATION_TYPES,
-   SALES_EXECUTIVES,
-   CURRENCIES,
-} from "../../../quotation/schemas/schemas";
 import Field from "../Field";
 
 export default function OrderHeader({
@@ -12,6 +7,15 @@ export default function OrderHeader({
    disabled,
    updateHeader,
    isEditing,
+   showQuotations,
+   setShowQuotations,
+   quotations,
+   handleQuotationSelect,
+   setHeader,
+   filteredQuotations,
+   quotation_types,
+   currencies,
+   sales_executives,
 }) {
    return (
       <>
@@ -24,7 +28,7 @@ export default function OrderHeader({
                      value={header.orderNo}
                      onChange={updateHeader("orderNo")}
                      // disabled
-                     disabled={disabled}
+                     disabled
                      maxLength={20}
                   />
                   <Field
@@ -34,7 +38,7 @@ export default function OrderHeader({
                      onChange={updateHeader("type")}
                      disabled={disabled}
                      placeholder="Select order type"
-                     options={QUOTATION_TYPES}
+                     options={quotation_types}
                   />
                   <Field
                      label="Issue Date"
@@ -52,14 +56,52 @@ export default function OrderHeader({
                      disabled={disabled}
                      rightIcon={Calendar}
                   />
-                  <Field
-                     label="No quotaions linked"
-                     value={header.noQuotLinked}
-                     onChange={updateHeader("noQuotLinked")}
-                     disabled={disabled}
-                     maxLength={50}
-                     counter
-                  />
+                  <div className="relative">
+                     <div className="relative rounded-md border border-slate-300 bg-white">
+                        <label className="absolute left-3 top-1.5 text-[11px] font-medium text-gray-600">
+                           No quotaions linked
+                        </label>
+
+                        <input
+                           value={header.noQuotLinked}
+                           onChange={(e) => {
+                              setShowQuotations(true);
+                              setHeader((prev) => ({
+                                 ...prev,
+                                 noQuotLinked: e.target.value,
+                              }));
+                           }}
+                           onBlur={() => {
+                              setTimeout(() => {
+                                 setShowQuotations(false);
+                              }, 150);
+                           }}
+                           disabled={disabled}
+                           className={`w-full bg-transparent pl-3 pr-9 pb-1.5 pt-5 text-sm outline-none text-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed`}
+                        />
+
+                        <Search
+                           size={16}
+                           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+                     </div>
+
+                     {showQuotations && filteredQuotations.length > 0 && (
+                        <div className="absolute z-50 left-0 right-0 max-h-48 overflow-auto rounded-md border border-slate-300 bg-white shadow-md">
+                           {filteredQuotations.map((quotation) => (
+                              <div
+                                 key={quotation.id}
+                                 onMouseDown={() =>
+                                    handleQuotationSelect(quotation)
+                                 }
+                                 className="cursor-pointer border-b border-slate-100 px-3 py-2 hover:bg-slate-100"
+                              >
+                                 {quotation.quotation_no}
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
                   <Field
                      label="Customer PO"
                      value={header.customerPO}
@@ -87,7 +129,7 @@ export default function OrderHeader({
                      onChange={updateHeader("salesExecutive")}
                      disabled={disabled}
                      placeholder="Select Sales Executive"
-                     options={SALES_EXECUTIVES}
+                     options={sales_executives}
                   />
                   <Field
                      label="Currency"
@@ -96,7 +138,7 @@ export default function OrderHeader({
                      onChange={updateHeader("currency")}
                      disabled={disabled}
                      placeholder="Select currency"
-                     options={CURRENCIES}
+                     options={currencies}
                   />
                   <Field
                      label="Ex Rate"

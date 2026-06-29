@@ -6,6 +6,7 @@ const BUTTON_VARIANTS = {
    dark: "bg-slate-800 hover:bg-slate-900 text-white",
    green: "bg-green-500 hover:bg-green-600 text-white shadow-sm",
    amber: "bg-amber-500 hover:bg-amber-600 text-white shadow-sm",
+   blue: "bg-blue-500 hover:bg-blue-600 text-white shadow-sm",
 };
 
 export default function ActionButton({

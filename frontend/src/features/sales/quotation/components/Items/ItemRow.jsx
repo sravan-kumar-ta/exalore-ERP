@@ -1,5 +1,5 @@
 import { Search, Trash2 } from "lucide-react";
-import { fmt } from "../../healper/calculationHelper";
+import { fmt } from "../../helper/calculationHelper";
 
 export default function ItemRow({
    row,
@@ -15,6 +15,8 @@ export default function ItemRow({
    handleItemSelect,
    getUnitCode,
    handleUnitChange,
+   handleDiscPercentTab,
+   codeRefs,
 }) {
    return (
       <>
@@ -36,6 +38,9 @@ export default function ItemRow({
                         updateRow(row.id, "code", e.target.value);
                         setActiveRowId(row.id);
                         setSearchText(e.target.value);
+                     }}
+                     ref={(el) => {
+                        if (el) codeRefs.current[row.id] = el;
                      }}
                      disabled={disabled}
                      className="w-full h-9 px-2 text-sm bg-transparent outline-none focus:bg-sky-50 disabled:cursor-not-allowed disabled:text-slate-500 pr-7"
@@ -121,6 +126,7 @@ export default function ItemRow({
                   onChange={(e) =>
                      updateRow(row.id, "discPercent", e.target.value)
                   }
+                  onKeyDown={(e) => handleDiscPercentTab(e, row.id)}
                   disabled={disabled}
                   min={0}
                   className="w-full h-9 px-2 text-sm bg-transparent outline-none focus:bg-sky-50 disabled:cursor-not-allowed disabled:text-slate-500 text-right tabular-nums"
@@ -144,7 +150,7 @@ export default function ItemRow({
                   title="Delete row"
                   onClick={() => deleteRow(row.id)}
                   disabled={disabled || rows.length === 1}
-                  className="inline-flex items-center justify-center w-7 h-7 rounded text-rose-500 hover:bg-rose-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center w-7 h-7 rounded text-rose-500 outline-rose-200 cursor-pointer hover:bg-rose-50 disabled:opacity-30 disabled:cursor-not-allowed"
                >
                   <Trash2 size={15} />
                </button>

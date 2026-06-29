@@ -19,6 +19,7 @@ import {
    RotateCcw,
    Truck,
    Wrench,
+   File
 } from "lucide-react";
 
 const navData = [
@@ -98,6 +99,12 @@ const navData = [
                   label: "Sales Order",
                   icon: ClipboardList,
                   path: "/sales/order",
+               },
+               {
+                  id: "pdf-template",
+                  label: "PDF Template",
+                  icon: File,
+                  path: "/sales/pdf-template",
                },
                {
                   id: "sales-inv",

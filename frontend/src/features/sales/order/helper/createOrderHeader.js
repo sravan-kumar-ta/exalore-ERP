@@ -1,0 +1,20 @@
+export const quotationToOrderHeader = (
+   quotation,
+   customerMap,
+   quotationTypeMap,
+   currencyMap,
+   salesExecutiveMap,
+) => ({
+   type: quotationTypeMap[quotation.quotation_type]?.id ?? "",
+   issueDate: quotation.quotation_date ?? "",
+   validDate: quotation.quotation_date ?? "",
+   quotation: quotation.id ?? "",
+   noQuotLinked: quotation.quotation_no ?? "",
+   customerPO: customerMap[quotation.customer]?.name ?? "",
+   customerSearch: customerMap[quotation.customer]?.name ?? "",
+   salesExecutive: salesExecutiveMap[quotation.sales_executive]?.id ?? "",
+   currency: currencyMap[quotation.currency]?.id ?? "",
+   exRate: quotation.exchange_rate ?? "",
+   deliveryPlace: quotation.delivery_place ?? "",
+   notes: quotation.notes ?? "",
+});

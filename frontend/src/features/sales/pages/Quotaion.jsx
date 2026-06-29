@@ -15,23 +15,17 @@ import {
    X as XIcon,
 } from "lucide-react";
 
-import {
-   QUOTATION_TYPES,
-   SALES_EXECUTIVES,
-   CURRENCIES,
-} from "../quotation/schemas/schemas";
-
 import { EMPTY_ROW, EMPTY_HEADER } from "../quotation/utilities/utilities";
 import {
    recalcRow,
    fmt,
    VAT_RATE,
-} from "../quotation/healper/calculationHelper";
+} from "../quotation/helper/calculationHelper";
 import Field from "../quotation/components/Field";
 import SummaryField from "../quotation/components/SummaryField";
 import ActionButton from "../quotation/components/ActionButton";
 import PagerButton from "../quotation/components/PagerButton";
-import { COLUMNS } from "../quotation/healper/columnHeaders";
+import { COLUMNS } from "../quotation/helper/columnHeaders";
 import ItemsTable from "../quotation/components/Items/ItemsTable";
 import QuotationSummary from "../quotation/components/Summary/QuotationSummary";
 import ActionBar from "../quotation/components/Actions/ActionBar";
@@ -40,7 +34,7 @@ import { useQuotation } from "../quotation/hooks/useQuotation";
 import { useItems, useUnitData } from "../../inventory/item-file/hooks/queries";
 import { getItemUnits } from "../../inventory/item-file/services/itemService";
 import { handlePreview } from "../quotation/pdf/PreviewModal";
-import { buildQuotationPayload } from "../quotation/healper/createPayload";
+import { buildQuotationPayload } from "../quotation/helper/createPayload";
 import {
    useCreateQuotation,
    useUpdateQuotation,
@@ -52,8 +46,11 @@ import { getQuotation } from "../quotation/services/quotationService";
 import {
    quotationToHeader,
    quotationToRows,
-} from "../quotation/healper/updateQuotation";
-import { useGetItemUnits } from "../quotation/hooks/queries";
+} from "../quotation/helper/updateQuotation";
+import {
+   useGetItemUnits,
+   useSalesMasterData,
+} from "../quotation/hooks/queries";
 
 export default function Quotation() {
    const {
@@ -63,6 +60,7 @@ export default function Quotation() {
       disabled,
       isEditing,
       crrQutId,
+      codeRefs,
       setIsEditing,
       updateHeader,
       updateRow,
@@ -73,18 +71,77 @@ export default function Quotation() {
       handleCancel,
       setHeader,
       setCrrQutId,
+      handleDiscPercentTab,
    } = useQuotation();
 
    const [activeRowId, setActiveRowId] = useState(null);
    const [searchText, setSearchText] = useState("");
    const [showLookup, setShowLookup] = useState(false);
+   const [showCustomers, setShowCustomers] = useState(false);
 
+   const { data: masterData } = useSalesMasterData();
    const { data: items = [] } = useItems();
    const { data: units = [] } = useUnitData();
    const { data: itemUnits = [] } = useGetItemUnits();
 
    const createQuotationMutation = useCreateQuotation();
    const updateQuotationMutation = useUpdateQuotation();
+
+   const {
+      customers = [],
+      quotation_types = [],
+      currencies = [],
+      sales_executives = [],
+   } = masterData || {};
+
+   const customerOptions = customers.map((c) => ({
+      value: c.id,
+      label: c.name,
+   }));
+
+   const quotationTypeOptions = quotation_types.map((t) => ({
+      value: t.id,
+      label: t.name,
+   }));
+
+   const currencyOptions = currencies.map((c) => ({
+      value: c.id,
+      label: c.code + " - " + c.name,
+   }));
+
+   const salesExecutiveOptions = sales_executives.map((s) => ({
+      value: s.id,
+      label: s.name,
+   }));
+
+   const filteredCustomers = customers.filter((customer) =>
+      customer.name
+         .toLowerCase()
+         .includes((header.customerName || "").toLowerCase()),
+   );
+
+   const handleCustomerSelect = (customer) => {
+      setHeader((prev) => ({
+         ...prev,
+         customer: customer.id,
+         customerName: customer.name,
+         cusRefNum: customer.reference,
+      }));
+
+      setShowCustomers(false);
+   };
+
+   const updateCrrHeader = (field) => (e) => {
+      const currency = currencies.find(
+         (crr) => crr.id === Number(e.target.value),
+      );
+
+      setHeader((prev) => ({
+         ...prev,
+         [field]: e.target.value,
+         exRate: currency?.exchange_rate ?? 1,
+      }));
+   };
 
    const updateRowFields = (rowId, values) => {
       setRows((prev) =>
@@ -123,7 +180,6 @@ export default function Quotation() {
    };
 
    const handleUnitChange = (rowId, selectedUnitId) => {
-      console.log("id", selectedUnitId);
       setRows((prev) =>
          prev.map((row) => {
             if (row.id !== rowId) return row;
@@ -146,9 +202,12 @@ export default function Quotation() {
 
    const handleCreateQuotation = () => {
       const payload = buildQuotationPayload(header, rows);
+
       createQuotationMutation.mutate(payload, {
-         onSuccess: () => {
+         onSuccess: (data) => {
             toast.success("Item updated successfully.");
+            setCrrQutId(data.id);
+            setIsEditing(false);
          },
          onError: (error) => {
             console.error(error);
@@ -157,13 +216,29 @@ export default function Quotation() {
       });
    };
 
+   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
+   const currencyMap = Object.fromEntries(currencies.map((c) => [c.id, c]));
+   const quotationTypeMap = Object.fromEntries(
+      quotation_types.map((t) => [t.id, t]),
+   );
+   const salesExecutiveMap = Object.fromEntries(
+      sales_executives.map((s) => [s.id, s]),
+   );
+
    const handleLoadQuotation = async (id) => {
       setShowLookup(false);
-      setIsEditing(true);
       setCrrQutId(id);
       try {
          const data = await getQuotation(id);
-         setHeader(quotationToHeader(data));
+         setHeader(
+            quotationToHeader(
+               data,
+               customerMap,
+               quotationTypeMap,
+               currencyMap,
+               salesExecutiveMap,
+            ),
+         );
          setRows(quotationToRows(data.lines, itemUnits));
          toast.success("Quotation " + data.quotation_no + " loaded.");
       } catch (error) {
@@ -179,6 +254,7 @@ export default function Quotation() {
          {
             onSuccess: () => {
                toast.success("Item updated successfully.");
+               setIsEditing(false);
             },
             onError: (error) => {
                console.error(error);
@@ -208,6 +284,16 @@ export default function Quotation() {
             disabled={disabled}
             updateHeader={updateHeader}
             isEditing={isEditing}
+            sales_executives={salesExecutiveOptions}
+            currencies={currencyOptions}
+            quotation_types={quotationTypeOptions}
+            customers={customerOptions}
+            filteredCustomers={filteredCustomers}
+            handleCustomerSelect={handleCustomerSelect}
+            showCustomers={showCustomers}
+            setShowCustomers={setShowCustomers}
+            setHeader={setHeader}
+            updateCrrHeader={updateCrrHeader}
          />
 
          <ItemsTable
@@ -223,6 +309,8 @@ export default function Quotation() {
             handleItemSelect={handleItemSelect}
             getUnitCode={getUnitCode}
             handleUnitChange={handleUnitChange}
+            handleDiscPercentTab={handleDiscPercentTab}
+            codeRefs={codeRefs}
          />
 
          <QuotationSummary totals={totals} />
@@ -240,6 +328,7 @@ export default function Quotation() {
             handleUpdateQuotation={handleUpdateQuotation}
             totals={totals}
             getUnitCode={getUnitCode}
+            setIsEditing={setIsEditing}
          />
 
          <QuotationLookupModal

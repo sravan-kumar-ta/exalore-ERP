@@ -1,4 +1,4 @@
-import { fmt } from "../../healper/calculationHelper";
+import { fmt } from "../../helper/calculationHelper";
 import SummaryField from "../SummaryField";
 
 export default function QuotationSummary({ totals }) {

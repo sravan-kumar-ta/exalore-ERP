@@ -2,16 +2,21 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: inventory-backend
+    container_name: exalore-backend
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./backend/media:/app/media
+    depends_on:
+      - db
 
   frontend:
     build:
       context: ./frontend
-    container_name: inventory-frontend
+    container_name: exalore-frontend
     ports:
       - "5173:5173"
     volumes:
@@ -19,3 +24,16 @@ services:
       - /app/node_modules
     depends_on:
       - backend
+
+  db:
+    image: postgres:16-alpine
+    container_name: exalore-db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

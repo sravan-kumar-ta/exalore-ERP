@@ -9,8 +9,10 @@ import PDFCustomerInfo from "./sections/PDFCustomerInfo";
 import PDFItemsTable from "./sections/PDFItemsTable";
 import PDFTotals from "./sections/PDFTotals";
 import PDFNotes from "./sections/PDFNotes";
-import PDFFooter from "./sections/PDFFooter";
+import PDFFooter from "./sections/PDFFooter"; // delete
 import PDFSummarySection from "./sections/PDFSummarySection";
+import PDFHeaderImage from "./sections/PDFHeaderImage";
+import PDFFooterImage from "./sections/PDFFooterImage";
 
 export default function QuotationPDF({
    header = {},
@@ -18,6 +20,8 @@ export default function QuotationPDF({
    totals = {},
    qrDataUrl = "",
    getUnitCode,
+   headerImage,
+   footerImage,
 }) {
    const pdfRows = rows.map((row) => ({
       ...row,
@@ -37,7 +41,11 @@ export default function QuotationPDF({
    return (
       <Document>
          <Page size="A4" style={styles.page}>
-            <PDFHeader header={header} />
+            {headerImage ? (
+               <PDFHeaderImage image={headerImage} />
+            ) : (
+               <PDFHeader header={header} />
+            )}
             <PDFInfoBar header={header} />
             <PDFCustomerInfo header={header} />
             <PDFItemsTable rows={pdfRows} />
@@ -47,7 +55,7 @@ export default function QuotationPDF({
                header={header}
             />
             <PDFNotes notes={header.notes} />
-            <PDFFooter />
+            {footerImage && <PDFFooterImage image={footerImage} />}
          </Page>
       </Document>
    );

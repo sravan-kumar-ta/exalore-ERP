@@ -26,6 +26,7 @@ export default function ActionBar({
    handleUpdateQuotation,
    totals,
    getUnitCode,
+   setIsEditing,
 }) {
    return (
       <div
@@ -38,32 +39,40 @@ export default function ActionBar({
             <PagerButton icon={ChevronRight} label="Next" />
             <PagerButton icon={ChevronsRight} label="Last" />
             <div className="w-px h-6 bg-slate-200 mx-1" />
-            {/* 
             <ActionButton
                icon={FilePlus2}
-               variant={isEditing ? "emerald" : "green"}
-               onClick={isEditing ? handleCreateQuotation : handleNew}
-            >
-               {isEditing ? "Save" : "New"}
-            </ActionButton> */}
-            <ActionButton
-               icon={FilePlus2}
-               variant={crrQutId ? "amber" : isEditing ? "emerald" : "green"}
+               variant={
+                  crrQutId
+                     ? isEditing
+                        ? "amber"
+                        : "blue"
+                     : isEditing
+                       ? "emerald"
+                       : "green"
+               }
                onClick={
                   crrQutId
-                     ? handleUpdateQuotation
+                     ? isEditing
+                        ? handleUpdateQuotation
+                        : () => setIsEditing(true)
                      : isEditing
                        ? handleCreateQuotation
                        : handleNew
                }
             >
-               {crrQutId ? "Update" : isEditing ? "Save" : "New"}
+               {crrQutId
+                  ? isEditing
+                     ? "Update"
+                     : "Edit"
+                  : isEditing
+                    ? "Save"
+                    : "New"}
             </ActionButton>
 
             <ActionButton
                icon={Printer}
                variant="light"
-               disabled={!isEditing}
+               disabled={!isEditing & !crrQutId}
                onClick={() => handlePreview(rows, header, totals, getUnitCode)}
             >
                Print
@@ -82,7 +91,7 @@ export default function ActionBar({
                icon={XIcon}
                variant="dark"
                onClick={handleCancel}
-               disabled={!isEditing}
+               disabled={!isEditing & !crrQutId}
             >
                Cancel
             </ActionButton>

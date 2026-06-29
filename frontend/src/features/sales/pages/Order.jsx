@@ -26,12 +26,12 @@ import {
    recalcRow,
    fmt,
    VAT_RATE,
-} from "../quotation/healper/calculationHelper";
+} from "../quotation/helper/calculationHelper";
 import Field from "../quotation/components/Field";
 import SummaryField from "../quotation/components/SummaryField";
 import ActionButton from "../quotation/components/ActionButton";
 import PagerButton from "../quotation/components/PagerButton";
-import { COLUMNS } from "../quotation/healper/columnHeaders";
+import { COLUMNS } from "../quotation/helper/columnHeaders";
 import ItemsTable from "../quotation/components/Items/ItemsTable";
 import QuotationSummary from "../quotation/components/Summary/QuotationSummary";
 import ActionBar from "../quotation/components/Actions/ActionBar";
@@ -39,22 +39,29 @@ import QuotationHeader from "../quotation/components/Header/QuotationHeader";
 import { useQuotation } from "../quotation/hooks/useQuotation";
 import { useItems, useUnitData } from "../../inventory/item-file/hooks/queries";
 import { getItemUnits } from "../../inventory/item-file/services/itemService";
-import { buildQuotationPayload } from "../quotation/healper/createPayload";
 import {
-   useCreateQuotation,
-   useUpdateQuotation,
-} from "../quotation/hooks/mutations";
+   useCreateSalesOrder,
+   useUpdateSalesOrder,
+} from "../order/hooks/mutations";
 import toast from "react-hot-toast";
 import QuotationModal from "../quotation/components/modal/QuotationModal";
-import QuotationLookupModal from "../quotation/components/modal/QuotationLookupModal";
+import QuotationLookupModal from "../order/components/modal/QuotationLookupModal";
 import { getQuotation } from "../quotation/services/quotationService";
 import {
    quotationToHeader,
    quotationToRows,
-} from "../quotation/healper/updateQuotation";
-import { useGetItemUnits } from "../quotation/hooks/queries";
+} from "../quotation/helper/updateQuotation";
+import {
+   useGetItemUnits,
+   useQuotations,
+   useSalesMasterData,
+} from "../quotation/hooks/queries";
 import OrderHeader from "../order/components/Header/OrderHeader";
 import { useOrder } from "../order/hooks/useOrder";
+import { quotationToOrderHeader } from "../order/helper/createOrderHeader";
+import { getOrderNumber, getSalesOrder } from "../order/services/orderService";
+import { buildOrderPayload } from "../order/helper/createPayload";
+import { orderToHeader } from "../order/helper/updateOrder";
 
 export default function Order() {
    const {
@@ -64,6 +71,7 @@ export default function Order() {
       disabled,
       isEditing,
       crrQutId,
+      codeRefs,
       setIsEditing,
       updateHeader,
       updateRow,
@@ -74,18 +82,49 @@ export default function Order() {
       handleCancel,
       setHeader,
       setCrrQutId,
+      handleDiscPercentTab,
    } = useOrder();
 
    const [activeRowId, setActiveRowId] = useState(null);
    const [searchText, setSearchText] = useState("");
    const [showLookup, setShowLookup] = useState(false);
+   const [showQuotations, setShowQuotations] = useState(false);
 
    const { data: items = [] } = useItems();
    const { data: units = [] } = useUnitData();
    const { data: itemUnits = [] } = useGetItemUnits();
+   const { data: quotations = [] } = useQuotations();
+   const { data: masterData } = useSalesMasterData();
 
-   // const createQuotationMutation = useCreateQuotation();
-   // const updateQuotationMutation = useUpdateQuotation();
+   const {
+      customers = [],
+      quotation_types = [],
+      currencies = [],
+      sales_executives = [],
+   } = masterData || {};
+
+   const customerOptions = customers.map((c) => ({
+      value: c.id,
+      label: c.name,
+   }));
+
+   const quotationTypeOptions = quotation_types.map((t) => ({
+      value: t.id,
+      label: t.name,
+   }));
+
+   const currencyOptions = currencies.map((c) => ({
+      value: c.id,
+      label: c.code + " - " + c.name,
+   }));
+
+   const salesExecutiveOptions = sales_executives.map((s) => ({
+      value: s.id,
+      label: s.name,
+   }));
+
+   const createSalesOrderMutation = useCreateSalesOrder();
+   const updateSalesOrderMutation = useUpdateSalesOrder();
 
    const updateRowFields = (rowId, values) => {
       setRows((prev) =>
@@ -99,6 +138,31 @@ export default function Order() {
          : items.filter((item) =>
               item.item_code.toLowerCase().includes(searchText.toLowerCase()),
            );
+
+   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
+   const currencyMap = Object.fromEntries(currencies.map((c) => [c.id, c]));
+   const quotationTypeMap = Object.fromEntries(
+      quotation_types.map((t) => [t.id, t]),
+   );
+   const salesExecutiveMap = Object.fromEntries(
+      sales_executives.map((s) => [s.id, s]),
+   );
+
+   const handleQuotationSelect = async (quotation) => {
+      const data = await getQuotation(quotation.id);
+      const header = quotationToOrderHeader(
+         data,
+         customerMap,
+         quotationTypeMap,
+         currencyMap,
+         salesExecutiveMap,
+      );
+
+      setHeader((prev) => ({ ...prev, ...header }));
+      setRows(quotationToRows(data.lines, itemUnits));
+
+      setShowQuotations(false);
+   };
 
    const handleItemSelect = async (rowId, item) => {
       const unitItemData = await getItemUnits(item.id);
@@ -124,7 +188,6 @@ export default function Order() {
    };
 
    const handleUnitChange = (rowId, selectedUnitId) => {
-      console.log("id", selectedUnitId);
       setRows((prev) =>
          prev.map((row) => {
             if (row.id !== rowId) return row;
@@ -145,27 +208,34 @@ export default function Order() {
       );
    };
 
+   const filteredQuotations = quotations.filter((quotation) =>
+      quotation.quotation_no
+         .toLowerCase()
+         .includes((header.noQuotLinked || "").toLowerCase()),
+   );
+
    const handleCreateQuotation = () => {
-      alert("Under contruction.");
-      //   const payload = buildQuotationPayload(header, rows);
-      //   createQuotationMutation.mutate(payload, {
-      //      onSuccess: () => {
-      //         toast.success("Item updated successfully.");
-      //      },
-      //      onError: (error) => {
-      //         console.error(error);
-      //         toast.error("Failed to update item");
-      //      },
-      //   });
+      const payload = buildOrderPayload(header);
+
+      createSalesOrderMutation.mutate(payload, {
+         onSuccess: () => {
+            toast.success("Order created successfully.");
+         },
+         onError: (error) => {
+            console.error(error);
+            toast.error("Failed to create order");
+         },
+      });
    };
 
    const handleLoadQuotation = async (id) => {
       setShowLookup(false);
-      setIsEditing(true);
       setCrrQutId(id);
+
       try {
-         const data = await getQuotation(id);
-         setHeader(quotationToHeader(data));
+         const data = await getSalesOrder(id);
+
+         setHeader(orderToHeader(data));
          setRows(quotationToRows(data.lines, itemUnits));
          toast.success("Quotation " + data.quotation_no + " loaded.");
       } catch (error) {
@@ -175,20 +245,20 @@ export default function Order() {
    };
 
    const handleUpdateQuotation = () => {
-      alert("Under contruction.");
-      //   const payload = buildQuotationPayload(header, rows);
-      //   updateQuotationMutation.mutate(
-      //      { id: crrQutId, payload },
-      //      {
-      //         onSuccess: () => {
-      //            toast.success("Item updated successfully.");
-      //         },
-      //         onError: (error) => {
-      //            console.error(error);
-      //            toast.error("Failed to update item");
-      //         },
-      //      },
-      //   );
+      const payload = buildOrderPayload(header);
+      
+      updateSalesOrderMutation.mutate(
+         { id: crrQutId, payload },
+         {
+            onSuccess: (data) => {
+               toast.success("Item updated successfully.");
+            },
+            onError: (error) => {
+               console.error(error);
+               toast.error("Failed to update item");
+            },
+         },
+      );
    };
 
    const handlePreview = () => alert("Under contruction");
@@ -213,6 +283,16 @@ export default function Order() {
             disabled={disabled}
             updateHeader={updateHeader}
             isEditing={isEditing}
+            showQuotations={showQuotations}
+            setShowQuotations={setShowQuotations}
+            sales_executives={salesExecutiveOptions}
+            currencies={currencyOptions}
+            quotation_types={quotationTypeOptions}
+            customers={customerOptions}
+            quotations={quotations}
+            handleQuotationSelect={handleQuotationSelect}
+            setHeader={setHeader}
+            filteredQuotations={filteredQuotations}
          />
 
          <ItemsTable
@@ -228,12 +308,15 @@ export default function Order() {
             handleItemSelect={handleItemSelect}
             getUnitCode={getUnitCode}
             handleUnitChange={handleUnitChange}
+            codeRefs={codeRefs}
+            handleDiscPercentTab={handleDiscPercentTab}
          />
 
          <QuotationSummary totals={totals} />
 
          <ActionBar
             isEditing={isEditing}
+            setIsEditing={setIsEditing}
             handleNew={handleNew}
             handleCancel={handleCancel}
             handlePreview={handlePreview} // need to change

@@ -1,0 +1,15 @@
+export const orderToHeader = (data) => ({
+   orderNo: data.order_no,
+   type: data.order_type.id,
+   issueDate: data.issue_date,
+   validDate: data.valid_date,
+   quotation: data.quotation.id,
+   noQuotLinked: data.quotation.quotation_no,
+   customerPO: data.quotation.customer.name,
+   customerSearch: data.quotation.customer.name,
+   salesExecutive: data.quotation.sales_executive.id,
+   currency: data.quotation.currency.id,
+   exRate: data.quotation.exchange_rate,
+   deliveryPlace: data.quotation.delivery_place,
+   notes: data.quotation.notes,
+});

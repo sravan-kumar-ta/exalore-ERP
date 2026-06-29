@@ -1,17 +1,23 @@
 import { Search, Calendar } from "lucide-react";
 
 import Field from "../Field";
-import {
-   QUOTATION_TYPES,
-   SALES_EXECUTIVES,
-   CURRENCIES,
-} from "../../schemas/schemas";
+import { useState } from "react";
 
 export default function QuotationHeader({
    header,
    disabled,
    updateHeader,
    isEditing,
+   customers,
+   quotation_types,
+   currencies,
+   sales_executives,
+   filteredCustomers,
+   handleCustomerSelect,
+   showCustomers,
+   setShowCustomers,
+   setHeader,
+   updateCrrHeader,
 }) {
    return (
       <>
@@ -33,7 +39,7 @@ export default function QuotationHeader({
                      onChange={updateHeader("type")}
                      disabled={disabled}
                      placeholder="Select quotation type"
-                     options={QUOTATION_TYPES}
+                     options={quotation_types}
                   />
                   <Field
                      label="Date"
@@ -43,13 +49,51 @@ export default function QuotationHeader({
                      disabled={disabled}
                      rightIcon={Calendar}
                   />
-                  <Field
-                     label="Customer Search"
-                     value={header.customer}
-                     onChange={updateHeader("customer")}
-                     disabled={disabled}
-                     rightIcon={Search}
-                  />
+                  <div className="relative">
+                     <div className="relative rounded-md border border-slate-300 bg-white">
+                        <label className="absolute left-3 top-1.5 text-[11px] font-medium text-gray-600">
+                           Customer
+                        </label>
+
+                        <input
+                           value={header.customerName}
+                           onChange={(e) => {
+                              setShowCustomers(true);
+                              setHeader((prev) => ({
+                                 ...prev,
+                                 customerName: e.target.value,
+                              }));
+                           }}
+                           onBlur={() => {
+                              setTimeout(() => {
+                                 setShowCustomers(false);
+                              }, 150);
+                           }}
+                           disabled={disabled}
+                           className={`w-full bg-transparent pl-3 pr-9 pb-1.5 pt-5 text-sm outline-none text-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed`}
+                        />
+
+                        <Search
+                           size={16}
+                           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+                     </div>
+
+                     {showCustomers && filteredCustomers.length > 0 && (
+                        <div className="absolute z-50 left-0 right-0 max-h-48 overflow-auto rounded-md border border-slate-300 bg-white shadow-md">
+                           {filteredCustomers.map((customer) => (
+                              <div
+                                 key={customer.id}
+                                 onMouseDown={() => handleCustomerSelect(customer)}
+                                 className="cursor-pointer border-b border-slate-100 px-3 py-2 hover:bg-slate-100"
+                              >
+                                 {customer.name}
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+
                   <Field
                      label="CusRefNum#"
                      value={header.cusRefNum}
@@ -65,7 +109,7 @@ export default function QuotationHeader({
                      onChange={updateHeader("salesExecutive")}
                      disabled={disabled}
                      placeholder="Select Sales Executive"
-                     options={SALES_EXECUTIVES}
+                     options={sales_executives}
                   />
                </div>
 
@@ -99,10 +143,10 @@ export default function QuotationHeader({
                      label="Currency"
                      type="select"
                      value={header.currency}
-                     onChange={updateHeader("currency")}
+                     onChange={updateCrrHeader("currency")}
                      disabled={disabled}
                      placeholder="Select currency"
-                     options={CURRENCIES}
+                     options={currencies}
                   />
                   <Field
                      label="Ex Rate"

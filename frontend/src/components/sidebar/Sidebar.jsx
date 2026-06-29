@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { LogOut, User, MapPin, Calendar, Search } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import navData from "./navData";
 import NavLeaf from "./NavLeaf";
 import SubGroup from "./SubGroup";
 import NavGroup from "./NavGroup";
+import { useLogout } from "../../features/auth/services/authServices";
 
 export default function Sidebar() {
+   const logout = useLogout();
+   const navigate = useNavigate();
+
+   const handleLogout = () => {
+      logout.mutate(undefined, {
+         onSuccess: () => {
+            navigate("/authentication", { replace: true });
+         },
+      });
+   };
    return (
       <aside className="w-sidebar h-screen bg-[#1a1f2e] flex flex-col shrink-0">
          {/* Logo */}
@@ -73,7 +84,10 @@ export default function Sidebar() {
                </div>
             </div>
 
-            <button className="mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-red-500/30 bg-red-500/5 text-red-300 hover:bg-red-500/10 transition-colors">
+            <button
+               onClick={handleLogout}
+               className="mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-red-500/30 bg-red-500/5 text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
+            >
                <LogOut size={14} />
                <span className="text-[12px] font-medium">Logout</span>
             </button>

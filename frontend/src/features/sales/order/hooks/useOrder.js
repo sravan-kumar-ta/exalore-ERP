@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { EMPTY_ROW, EMPTY_HEADER } from "../utilities/utilities";
-import { recalcRow } from "../../quotation/healper/calculationHelper";
+import { recalcRow } from "../../quotation/helper/calculationHelper";
+import { getOrderNumber } from "../services/orderService";
 
 export function useOrder() {
    const [isEditing, setIsEditing] = useState(false);
    const [header, setHeader] = useState(EMPTY_HEADER);
    const [rows, setRows] = useState([EMPTY_ROW]);
    const [crrQutId, setCrrQutId] = useState("");
+   const codeRefs = useRef({});
 
    const updateHeader = (field) => (e) =>
       setHeader((prev) => ({ ...prev, [field]: e.target.value }));
@@ -23,14 +25,38 @@ export function useOrder() {
       );
    };
 
+   // const addRow = () => {
+   //    setRows((prev) => [
+   //       ...prev,
+   //       {
+   //          ...EMPTY_ROW,
+   //          id: prev.length ? Math.max(...prev.map((r) => r.id)) + 1 : 1,
+   //       },
+   //    ]);
+   // };
    const addRow = () => {
-      setRows((prev) => [
-         ...prev,
-         {
-            ...EMPTY_ROW,
-            id: prev.length ? Math.max(...prev.map((r) => r.id)) + 1 : 1,
-         },
-      ]);
+      const newId =
+         rows.length > 0 ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
+
+      setRows((prev) => [...prev, { ...EMPTY_ROW, id: newId }]);
+      return newId;
+   };
+
+   const handleDiscPercentTab = (e, rowId) => {
+      if (e.key !== "Tab") return;
+
+      // Only add a row if this is the last row
+      const isLastRow = rows[rows.length - 1].id === rowId;
+
+      if (!isLastRow) return;
+
+      e.preventDefault();
+
+      const newRowId = addRow();
+
+      requestAnimationFrame(() => {
+         codeRefs.current[newRowId]?.focus();
+      });
    };
 
    const deleteRow = (id) => {
@@ -40,13 +66,13 @@ export function useOrder() {
    };
 
    const handleNew = async () => {
-      // // const data = await getQuotationNumber();
+      const data = await getOrderNumber();
       setCrrQutId("");
       setIsEditing(true);
-      // setHeader((prev) => ({
-      //    ...prev,
-      //    quotationNo: data.quotation_no,
-      // }));
+      setHeader((prev) => ({
+         ...prev,
+         orderNo: data.Order_no,
+      }));
    };
 
    const handleCancel = () => {
@@ -83,6 +109,7 @@ export function useOrder() {
       rows,
       totals,
       crrQutId,
+      codeRefs,
       updateHeader,
       updateRow,
       addRow,
@@ -93,5 +120,6 @@ export function useOrder() {
       setHeader,
       setIsEditing,
       setCrrQutId,
+      handleDiscPercentTab,
    };
 }

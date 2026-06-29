@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from .calculator import calculate_amounts, initialize_totals, update_totals, apply_totals
-from .models import SalesQuotation, SalesQuotationLine
+from sale import models
+from sale.calculator import initialize_totals, calculate_amounts, update_totals, apply_totals
 
 
 class SalesQuotationLineSerializer(serializers.ModelSerializer):
@@ -9,7 +9,7 @@ class SalesQuotationLineSerializer(serializers.ModelSerializer):
     item_code = serializers.CharField(source="item.item_code", read_only=True)
 
     class Meta:
-        model = SalesQuotationLine
+        model = models.SalesQuotationLine
         exclude = ("quotation",)
 
 
@@ -17,7 +17,7 @@ class SalesQuotationSerializer(serializers.ModelSerializer):
     lines = SalesQuotationLineSerializer(many=True)
 
     class Meta:
-        model = SalesQuotation
+        model = models.SalesQuotation
         fields = "__all__"
         read_only_fields = (
             "gross_amount",
@@ -29,12 +29,12 @@ class SalesQuotationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         lines_data = validated_data.pop("lines")
-        quotation = SalesQuotation.objects.create(**validated_data)
+        quotation = models.SalesQuotation.objects.create(**validated_data)
         totals = initialize_totals()
 
         for line in lines_data:
             amounts = calculate_amounts(line)
-            SalesQuotationLine.objects.create(quotation=quotation, **amounts, **line)
+            models.SalesQuotationLine.objects.create(quotation=quotation, **amounts, **line)
             update_totals(totals, amounts)
 
         apply_totals(quotation, totals)
@@ -71,7 +71,7 @@ class SalesQuotationSerializer(serializers.ModelSerializer):
                 incoming_ids.add(line_id)
 
             else:
-                line = SalesQuotationLine.objects.create(quotation=instance, **line_data, **amounts)
+                line = models.SalesQuotationLine.objects.create(quotation=instance, **line_data, **amounts)
                 incoming_ids.add(line.id)
 
             update_totals(totals, amounts)
@@ -85,13 +85,12 @@ class SalesQuotationSerializer(serializers.ModelSerializer):
 
 class SalesQuotationListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SalesQuotation
+        model = models.SalesQuotation
         fields = (
             "id",
             "quotation_no",
             "customer",
             "quotation_date",
-            "customer_reference",
             "sales_executive",
             "delivery_place",
             "net_amount",

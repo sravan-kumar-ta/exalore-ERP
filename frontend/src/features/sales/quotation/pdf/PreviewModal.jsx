@@ -2,6 +2,7 @@ import { pdf, PDFViewer } from "@react-pdf/renderer";
 import QuotationPDF from "./QuotationPDF";
 import toast from "react-hot-toast";
 import QRCode from "qrcode";
+import { getDocumentTemplate } from "../services/quotationService";
 
 export const handlePreview = async (rows = [], header, totals, getUnitCode) => {
    const qrPayload = {
@@ -10,11 +11,15 @@ export const handlePreview = async (rows = [], header, totals, getUnitCode) => {
       date: header.date,
       total: totals.netAfterVat,
    };
+
+   const template = await getDocumentTemplate(header.customer);
+
    const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrPayload), {
       width: 150,
       margin: 1,
    });
-   if (!rows.length || !rows[0]?.id) {
+
+   if (totals.netAfterVat == 0) {
       toast.error("Add items before print.");
       return;
    }
@@ -27,6 +32,8 @@ export const handlePreview = async (rows = [], header, totals, getUnitCode) => {
             totals={totals}
             qrDataUrl={qrDataUrl}
             getUnitCode={getUnitCode}
+            headerImage={template.header_url ?? null}
+            footerImage={template.footer_url ?? null}
          />,
       ).toBlob();
 

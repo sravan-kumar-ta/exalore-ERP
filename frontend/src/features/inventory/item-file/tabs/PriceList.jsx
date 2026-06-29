@@ -58,7 +58,7 @@ export default function PriceList() {
             },
             {
                onSuccess: () => {
-                  console.log(`Row ${row.id} updated`);
+                  // console.log(`Row ${row.id} updated`);
                   toast.success("Price added successfully")
                },
                onError: (error) => {

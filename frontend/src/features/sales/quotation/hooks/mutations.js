@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createQuotation, updateQuotation } from "../services/quotationService";
+import { createQuotation, updateDocumentTemplate, updateQuotation } from "../services/quotationService";
 
 export const useCreateQuotation = () => {
    const queryClient = useQueryClient();
@@ -32,6 +32,20 @@ export const useUpdateQuotation = () => {
 
          queryClient.invalidateQueries({
             queryKey: ["quotation", variables.id],
+         });
+      },
+   });
+};
+
+export const useUpdateDocumentTemplate = () => {
+   const queryClient = useQueryClient();
+
+   return useMutation({
+      mutationFn: updateDocumentTemplate,
+
+      onSuccess: (_, variables) => {
+         queryClient.invalidateQueries({
+            queryKey: ["documentTemplate", variables.customerId],
          });
       },
    });

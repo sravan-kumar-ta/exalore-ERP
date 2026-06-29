@@ -11,14 +11,6 @@ export default function QuotationModal({ open, onClose, onSelect }) {
       date: "",
    });
 
-   if (data) {
-      console.log(data)
-   }
-
-   if (error) {
-      console.log(error)
-   }
-
    const filteredData = data.filter((q) => {
       return (
          q.quotation_no

@@ -1,6 +1,6 @@
 import { Plus, Search, Trash2 } from "lucide-react";
-import { COLUMNS } from "../../healper/columnHeaders";
-import { fmt } from "../../healper/calculationHelper";
+import { COLUMNS } from "../../helper/columnHeaders";
+import { fmt } from "../../helper/calculationHelper";
 import ItemRow from "./ItemRow";
 
 export default function ItemsTable({
@@ -16,6 +16,8 @@ export default function ItemsTable({
    handleItemSelect,
    getUnitCode,
    handleUnitChange,
+   handleDiscPercentTab,
+   codeRefs,
 }) {
    return (
       <>
@@ -64,6 +66,8 @@ export default function ItemsTable({
                               handleItemSelect={handleItemSelect}
                               getUnitCode={getUnitCode}
                               handleUnitChange={handleUnitChange}
+                              handleDiscPercentTab={handleDiscPercentTab}
+                              codeRefs={codeRefs}
                            />
                         ))}
                      </tbody>
@@ -71,7 +75,7 @@ export default function ItemsTable({
                </div>
 
                {/* Add row footer — pinned, never scrolls */}
-               <div className="border-t border-slate-200 bg-slate-50/60 px-3 py-2">
+               {/* <div className="border-t border-slate-200 bg-slate-50/60 px-3 py-2">
                   <button
                      type="button"
                      onClick={addRow}
@@ -80,7 +84,7 @@ export default function ItemsTable({
                   >
                      <Plus size={14} /> Add Row
                   </button>
-               </div>
+               </div> */}
             </div>
          </div>
       </>

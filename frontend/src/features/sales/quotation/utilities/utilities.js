@@ -19,13 +19,14 @@ export const EMPTY_HEADER = {
    type: "",
    date: new Date().toISOString().slice(0, 10),
    customer: "",
+   customerName: "", 
    cusRefNum: "",
    salesExecutive: "",
    attention: "",
    payTerms: "",
    deliveryPlace: "",
-   currency: "SAR",
-   exRate: "1",
+   currency: "",
+   exRate: "0.00",
    notes: "",
 };
 
