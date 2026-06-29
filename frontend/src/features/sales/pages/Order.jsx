@@ -218,8 +218,10 @@ export default function Order() {
       const payload = buildOrderPayload(header);
 
       createSalesOrderMutation.mutate(payload, {
-         onSuccess: () => {
+         onSuccess: (data) => {
             toast.success("Order created successfully.");
+            setCrrQutId(data.id);
+            setIsEditing(false);
          },
          onError: (error) => {
             console.error(error);
