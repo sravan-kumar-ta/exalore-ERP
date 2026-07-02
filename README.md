@@ -4,13 +4,7 @@ A simple ERP (Enterprise Resource Planning) system built as an interview task. I
 
 ## Tech Stack
 
-| Layer    | Technology                                        |
-| -------- | ------------------------------------------------- |
-| Frontend | React 19, Vite 8, Tailwind CSS 4, React Router 7  |
-| Backend  | Django 6, Django REST Framework 3.17              |
-| Auth     | Simple JWT (`djangorestframework-simplejwt`)      |
-| Database | PostgreSQL 16 (via Docker) / SQLite for local dev |
-| DevOps   | Docker & Docker Compose                           |
+React, Tailwind, axios+react-query, Django, DRF, Simple JWT, PostgreSQL, Docker
 
 ## Where Tokens Are Stored (Frontend)
 
